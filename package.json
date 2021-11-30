@@ -30,7 +30,6 @@
   "author": "Rebecca Turner <me@re-becca.org> (http://re-becca.org/)",
   "license": "ISC",
   "description": "Better TOML parsing and stringifying all in that familiar JSON interface.",
-  "dependencies": {},
   "devDependencies": {
     "@iarna/standard": "^2.0.2",
     "@ltd/j-toml": "^0.5.107",
@@ -44,6 +43,7 @@
     "glob": "^7.1.2",
     "js-yaml": "^3.13.1",
     "rimraf": "^2.6.2",
+    "rstoml": "^0.0.2",
     "tap": "^12.0.1",
     "toml": "^3.0.0",
     "toml-j0.4": "^1.1.1",
