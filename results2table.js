@@ -104,7 +104,7 @@ for (let nodev in results) {
       if (!mb) {
         line += ` - |`
       } else {
-        line += ` ${approx(mb)}MB/sec ${getMedal(sorted, name)}<br><small>${bench[name].errmargin}%</small> |`
+        line += ` ${approx(mb)}MB/s ${getMedal(sorted, name)}<br><small>${bench[name].errmargin}%</small> |`
       }
     }
     content.push(line)
@@ -126,7 +126,7 @@ for (let nodev in results) {
         .map((lib) => {
           const index = avgSorted.findIndex((l) => l.k === lib)
           const data = avgSorted[index]
-          return ` ${approx(data.v)}MB/sec ${getMedal(avgSortedNames, lib)}|`
+          return ` ${approx(data.v)}MB/s ${getMedal(avgSortedNames, lib)}|`
         })
         .join(''),
   )
