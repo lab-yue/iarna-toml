@@ -67,8 +67,19 @@ for (let nodev in results) {
   const tests = Object.keys(results[nodev])
   const libs = Object.keys(results[nodev][tests[0]])
   content.push('')
-  content.push('|   |' + libs.map((_) => ` ${_.replace(/[/]/, '/<wbr>')} |`).join(''))
+  content.push('|   |' + libs.map((_) => ` [${_.replace(/[/]/, '/<wbr>')}](https://npm.im/${_}) |`).join(''))
   content.push('| - |' + libs.map((_) => ` :${repeat('-', _.length - 2)}: |`).join(''))
+  content.push(
+    '| **status** |' +
+      libs
+        .map(
+          (lib) =>
+            ` ${['v', 'dm', 'license', 'node', 'dependents', 'types']
+              .map((badge) => `![](https://badgen.net/npm/${badge}/${lib})`)
+              .join('<br>')} |`,
+        )
+        .join(''),
+  )
 
   for (let test of tests) {
     if (!size[test]) {
