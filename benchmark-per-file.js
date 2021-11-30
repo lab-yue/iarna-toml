@@ -33,10 +33,7 @@ const Benchmark = require('benchmark')
 const parseIarnaToml = require('./parse-string.js')
 const parseToml = require('toml').parse
 const parseTomlj04 = require('toml-j0.4').parse
-const rsToml = require('rstoml')
-function parseRsToml (str) {
-  return rsToml.parseBuffer(Buffer.from(str,'utf8'))
-}
+const parseRsToml = require('rstoml').parse
 const bombadil = require('@sgarciac/bombadil')
 function parseBombadil (str) {
   const reader = new bombadil.TomlReader()

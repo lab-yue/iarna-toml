@@ -4,10 +4,10 @@ const fs = require('fs')
 const results = JSON.parse(fs.readFileSync('./benchmark-results.json'))
 
 const size = {
-  'overall': 1124628
+  overall: 1124628,
 }
 const testName = {
-  'overall': 'Overall',
+  overall: 'Overall',
   '0A-spec-01-example-v0.4.0': 'Spec Example: v0.4.0',
   '0A-spec-02-example-hard-unicode': 'Spec Example: Hard Unicode',
   '0B-types-array-inline-empty': 'Types: Array, Inline',
@@ -31,10 +31,10 @@ const testName = {
   '0C-scaling-scalar-string-multiline-40kb': 'Scaling: Basic String, Multiline, 40kb',
   '0C-scaling-string-40kb': 'Scaling: Basic String, 40kb',
   '0C-scaling-table-inline-1000': 'Scaling: Table, Inline, 1000 elements',
-  '0C-scaling-table-inline-nested-1000': 'Scaling: Table, Inline, Nested, 1000 deep'
+  '0C-scaling-table-inline-nested-1000': 'Scaling: Table, Inline, Nested, 1000 deep',
 }
 
-function fileSize (name) {
+function fileSize(name) {
   /* eslint-disable security/detect-non-literal-fs-filename */
   try {
     return fs.readFileSync('benchmark/' + name + '.toml').length
@@ -43,40 +43,82 @@ function fileSize (name) {
   }
 }
 
-function repeat (str, count) {
+function repeat(str, count) {
   let result = ''
   for (let ii = 0; ii < count; ++ii) result += str
   return result
 }
 
+function getMedal(sorted, lib) {
+  const index = sorted.indexOf(lib)
+  if (index < 3) return medals[index]
+  return ''
+}
+
+const medals = ['🥇', '🥈', '🥉']
+const avg = {}
+const content = []
+
 for (let nodev in results) {
-  console.log(`### ${nodev}`)
+  content.push(`### ${nodev}`)
+  // overall is not reported if any errors/crashes happen,
+  // excluding for now because running the benchmark again is too time consuming.
+  delete results[nodev]['overall']
   const tests = Object.keys(results[nodev])
   const libs = Object.keys(results[nodev][tests[0]])
-  console.log('')
-  console.log('|   |' + libs.map(_ => ` ${_.replace(/[/]/, '/<wbr>')} |`).join(''))
-  console.log('| - |' + libs.map(_ => ` :${repeat('-', _.length - 2)}: |`).join(''))
+  content.push('')
+  content.push('|   |' + libs.map((_) => ` ${_.replace(/[/]/, '/<wbr>')} |`).join(''))
+  content.push('| - |' + libs.map((_) => ` :${repeat('-', _.length - 2)}: |`).join(''))
 
-  for (let name of tests) {
-    if (!size[name]) {
+  for (let test of tests) {
+    if (!size[test]) {
       try {
-        size[name] = fileSize(name)
+        size[test] = fileSize(test)
       } catch (_) {
         continue
       }
     }
-    const bench = results[nodev][name]
-    let line = `| **${testName[name] || name}** |`
-    for (let lib of libs) {
-      if (!bench[lib] || bench[lib].crashed) {
+    const bench = results[nodev][test]
+    let line = `| **${testName[test] || test}** |`
+    const libsWithMb = libs.map((lib) => {
+      if (!bench[lib] || bench[lib].crashed) return { mb: null, lib }
+      const speed = bench[lib].opsec * size[test]
+      const mb = speed / 1000000
+      avg[lib] ??= []
+      avg[lib].push(mb)
+      return { mb, name: lib }
+    })
+    const sorted = [...libsWithMb].sort((la, lb) => lb.mb - la.mb).map(({ name }) => name)
+    for (let { name, mb } of libsWithMb) {
+      if (!mb) {
         line += ` - |`
       } else {
-        const speed = bench[lib].opsec * size[name]
-        const mb = speed / 1000000
-        line += ` ${approx(mb)}MB/sec<br><small>${bench[lib].errmargin}%</small> |`
+        line += ` ${approx(mb)}MB/sec ${getMedal(sorted, name)}<br><small>${bench[name].errmargin}%</small> |`
       }
     }
-    console.log(line)
+    content.push(line)
   }
-  console.log('')
+  content.push('')
+
+  const avgSorted = Object.entries(avg)
+    .map(([k, v]) => {
+      return { k, v: v.reduce((acc, curr) => acc + curr) / v.length }
+    })
+    .sort((la, lb) => lb.v - la.v)
+  const avgSortedNames = avgSorted.map((l) => l.k)
+
+  content.splice(
+    4,
+    0,
+    '| **Average** |' +
+      libs
+        .map((lib) => {
+          const index = avgSorted.findIndex((l) => l.k === lib)
+          const data = avgSorted[index]
+          return ` ${approx(data.v)}MB/sec ${getMedal(avgSortedNames, lib)}|`
+        })
+        .join(''),
+  )
+
+  fs.writeFileSync('BENCHMARK.md', content.join('\n'), 'utf8')
 }
